@@ -20,7 +20,7 @@ POST /new<br>
 Este request necesita un Body con los campos products y description. En este caso, products es un string con el ID de los productos separado por comos. (Eg. 0,1,2,3). Description es un string.<br>
 Te devolvera un objecto de orden con id, descripcion, status y una matriz de los estados por los que ha pasado vacia.<br>
 PATCH /update/:id<br>
-Este request necesita un Body con el campo status el cual contiene el nuevo Status. El id el el URL es el de tu pedido<br>
+Este request necesita un Body con el campo status el cual contiene el nuevo Status. El id en el URL es el de tu pedido.<br>
 Te devolvera un objeto de orden con id, descripcion, status y una matriz de los estados por los que ha pasado actualizada.<br>
 
 # Posdata
