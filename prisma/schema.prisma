@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  seed    = "prisma/seed.ts"
 }
 
 datasource db {
@@ -20,10 +21,26 @@ enum Status {
   DELIVERED
 }
 
+enum ProductStatus {
+  BLOCKED
+  INSTOCK
+  OUTOFSTOCK
+  DOESNTEXIST
+}
+
+model State {
+  id        Int         @id @default(autoincrement())
+  state     String      @unique 
+  isOrder   Int
+  orders    Order[]
+  products  Product[]
+}
+
 model Product {
   id         Int        @id @default(autoincrement())
-  name       String
-  status     Status
+  name       String     
+  status     State      @relation(fields: statusID, references: id)
+  statusID   Int
   categories Category[]
   Order      Order[]
 }
@@ -32,14 +49,14 @@ model Category {
   id          Int      @id @default(autoincrement())
   name        String
   description String
-  Product     Product? @relation(fields: [productId], references: [id])
-  productId   Int?
+  products    Product[]
 }
 
 model Order {
   id          Int       @id @default(autoincrement())
   description String
-  status      Status
-  oldStatus   Status[]
+  status      State     @relation(fields: statusID, references: id)
+  statusID    Int
+  oldStatus   Int[]
   products    Product[]
 }

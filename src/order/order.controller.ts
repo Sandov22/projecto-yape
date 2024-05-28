@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { setDefaultResultOrder } from 'dns';
 import { OrderDto } from './dto';
-import { Status } from '@prisma/client';
 
 @Controller('order')
 export class OrderController {
@@ -18,10 +17,14 @@ export class OrderController {
         return this.orderService.newOrder(order)
     }
 
-    @Patch("update/:id")
+    @Patch("updatestatus/:id")
     updateStatus(@Param("id") id: string, @Body() statusUp: { status: string }) {
         //console.log("RECEIVED", statusUp, id);
         return this.orderService.updateStatus(id, statusUp)
     }
 
+    @Delete("delete/:id")
+    deleteOrder(@Param("id") id: string) {
+        return this.orderService.deleteOrder(id)
+    }
 }
