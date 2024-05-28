@@ -28,15 +28,14 @@ export class CategoryService {
     }
 
     async deleteCategory(id: string) {
-        const idNum = Number(id)
-        const mycategory = await this.prisma.category.findUnique({
-            where: { id: idNum },
+        const mycategory = await this.prisma.category.findFirst({
+            where: { name: id },
         });
         if (!mycategory) {
             return {done: "Not Existant"}
         }
         return this.prisma.category.delete({
-            where: { id: idNum },
+            where: { id: mycategory.id },
           });
     }
 }

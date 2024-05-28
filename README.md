@@ -12,27 +12,97 @@ Para correr el programa sigue estos pasos:
 ### Paso 1
 ```bash
 #En la terminal corre este comando para empezar el servidor
-$ yarn start:dev 
+$ npm install
+#Crea un archivo llamado .env y pon: DATABASE_URL="postgresql://postgres:123@localhost:5434/nest?schema=public"
 #Luego corre este commando para inicializar la base de datos
 $ docker compose up dv-db -d
-#Luego corre este comando para generar los Status para la base de datos
-$ npx prisma db seed
-```
-
-### Paso 2
-Hay tres requests que puedes hacer:<br>
-GET /get/:id<br>
-Este request te devolvera un objecto con el status de tu pedido. El id es el de tu pedido y se obtiene cuando se crea un pedido.<br>
-POST /new<br>
-Este request necesita un Body con los campos products y description. En este caso, products es un string con el ID de los productos separado por comos. (Eg. 0,1,2,3). Description es un string.<br>
-Te devolvera un objecto de orden con id, descripcion, status y una matriz de los estados por los que ha pasado vacia.<br>
-PATCH /update/:id<br>
-Este request necesita un Body con el campo status el cual contiene el nuevo Status. El id en el URL es el de tu pedido.<br>
-Te devolvera un objeto de orden con id, descripcion, status y una matriz de los estados por los que ha pasado actualizada.<br>
-
-## Posdata
-Yo he utilizado prisma para ver la base de datos. El comando para usarlo es:
-```bash
+#Para empezar prisma corre estos commandos:
+npx prisma migrate dev --name init
+npx prisma generate
+npm install --global yarn
+yarn install
+#Para generar los Status originales en la base de datos corre:
+npx ts-node prisma/seed.ts
+#Para correr el servidor corre
+yarn start:dev
+#Opcionalmente, prisma te deja inspeccionar y editar tu base de datos, corre:
 npx prisma studio
 ```
-Aca podra ver claramente como se actualiza la base de datos. Tambien he usado insomnia para hacer los requests.
+
+# Funciones
+Aca dejo una lista de los requests posibles:<br>
+### Productos
+POST /product/new<br>
+body:<br>
+{<br>
+  "name": "Nuevo Producto",<br>
+  "categories": "Electronico,Salud"<br>
+}<br>Este request creara un nuevo producto. En el body pon el nombre del producto y las categorias a las que pertence separadas por commas.<br>
+
+GET /product/:nombre<br>
+Este request te dara el estado del producto que pediste. Pon el nombre del producto en el url.<br>
+
+PATCH /product/updatestatus/:nombre<br>
+body:<br>
+{<br>
+  "status": "INSTOCK"<br>
+}<br>
+Este request te dejara cambiar el status del producto. Pon el nombre del producto en el url y el nuevo status en el body.<br>
+
+PATCH /order/addcategory/:nombre<br>
+body:<br>
+{<br>
+  "category": "Comida"<br>
+}<br>
+Este request añadira una categoria a el producto. Pon el nombre del producto en el url y la categoria en el body.
+
+DELETE /product/delete/:nombre<br>
+Este request borrara el producto de la base de datos. Pon el nombre del producto en el url.
+
+### Categorias
+POST /category/new<br>
+body:<br>
+{<br>
+  "name": "Categoria",<br>
+  "description": "Nueva categoria"<br>
+}<br>Este request creara una nuevo categoria. En el body pon el nombre de la categoria y una descripcion.<br>
+
+GET /category/:nombre<br>
+Este request te dara los productos asociados a esta categoria. Pon el nombre de la categoria en el url.<br>
+
+DELETE /category/delete/:nombre<br>
+Este request borrara la categoria de la base de datos. Pon el nombre de la categoria en el url.
+
+### Ordenes
+POST /order/new<br>
+body:<br>
+{<br>
+    "products": "Papa,Tomate,Manzana"
+    "description": "Un nuevo pedido"
+}<br>Este request creara una nuevo orden. En el body pon los productos separados por commas y una descripcion.<br>
+
+GET /order/:id<br>
+Este request te dara el status de tu orden. Pon el id de la orden en el url.<br>
+
+PATCH /order/updatestatus/:id<br>
+body:<br>
+{<br>
+  "status": "PROCESSING"<br>
+}<br>
+Este request te dejara cambiar el status de la orden. Pon el id de la orden en el url y el nuevo status en el body.<br>
+
+DELETE /order/delete/:id<br>
+Este request borrara la orden de la base de datos. Pon el id de la categoria en el url.<br>
+
+### Status
+POST /state/new<br>
+body:<br>
+{<br>
+    "name": "CANCELLED"
+    "isOrder": 0 si es un estado de orden o 1 si es de producto
+}<br>
+Este request creara un nuevo Status. Pon el nombre y si es para una orden en el body.<br>
+
+GET /state/get/:isOrder<br>
+Este request devolvera todos los tipos de Status que hay para ordenes o productos dependiendo si se usa un 0 o 1 en el url.
+

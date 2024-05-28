@@ -11,8 +11,8 @@ export class StateController {
     }
 
     @Get("get/:isorder")
-    getStates(@Param("isorder") isorder: number) {
-        return this.stateService.getStates(isorder)
+    getStates(@Param("isorder") isorder: string) {
+        return this.stateService.getStates(Number(isorder))
     }
 
 }
