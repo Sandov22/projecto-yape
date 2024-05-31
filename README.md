@@ -36,8 +36,8 @@ POST /product/new<br>
 body:<br>
 {<br>
   "name": "Nuevo Producto",<br>
-  "categories": "Electronico,Salud"<br>
-}<br>Este request creara un nuevo producto. En el body pon el nombre del producto y las categorias a las que pertence separadas por commas.<br>
+  "categories": ["Electronico","Salud"]<br>
+}<br>Este request creara un nuevo producto. En el body pon el nombre del producto y las categorias a las que pertence como en el formato mostrado en el ejemplo.<br>
 
 GET /product/:nombre<br>
 Este request te dara el estado del producto que pediste. Pon el nombre del producto en el url.<br>
@@ -77,9 +77,9 @@ Este request borrara la categoria de la base de datos. Pon el nombre de la categ
 POST /order/new<br>
 body:<br>
 {<br>
-    "products": "Papa,Tomate,Manzana"
+    "products": ["Papa","Tomate","Manzana"]
     "description": "Un nuevo pedido"
-}<br>Este request creara una nuevo orden. En el body pon los productos separados por commas y una descripcion.<br>
+}<br>Este request creara una nuevo orden. En el body pon los productos como en el formato mostrado en el ejemplo y una descripcion.<br>
 
 GET /order/:id<br>
 Este request te dara el status de tu orden. Pon el id de la orden en el url.<br>
@@ -94,15 +94,24 @@ Este request te dejara cambiar el status de la orden. Pon el id de la orden en e
 DELETE /order/delete/:id<br>
 Este request borrara la orden de la base de datos. Pon el id de la categoria en el url.<br>
 
-### Status
-POST /state/new<br>
+### ProductStatus
+POST /productstate/new<br>
+body:<br>
+{<br>
+    "name": "LIMITED"
+}<br>
+Este request creara un nuevo Product Status. Pon el nombre en el body.<br>
+
+GET /productstate/get<br>
+Este request devolvera todos los Product Status que hay.
+
+### OrderStatus
+POST /orderstate/new<br>
 body:<br>
 {<br>
     "name": "CANCELLED"
-    "isOrder": 0 si es un estado de orden o 1 si es de producto
 }<br>
-Este request creara un nuevo Status. Pon el nombre y si es para una orden en el body.<br>
+Este request creara un nuevo Order Status. Pon el nombre en el body.<br>
 
-GET /state/get/:isOrder<br>
-Este request devolvera todos los tipos de Status que hay para ordenes o productos dependiendo si se usa un 0 o 1 en el url.
-
+GET /state/get<br>
+Este request devolvera todos los tipos de Order Status que hay.
