@@ -18,6 +18,17 @@ export class CategoryService {
     }
 
     async newCategory(category: CategoryDto) {
+        const categoryFound = await this.prisma.category.findFirst({
+            where:{
+                name: category.name
+            }
+        })
+        if (categoryFound) {
+            return {error: "Category already exists"}
+        }
+        if(category.name.length > 25) {
+            return {error: "Category name is too long"}
+        }
         const prismaCategory = this.prisma.category.create({
             data: {
                 name: category.name,

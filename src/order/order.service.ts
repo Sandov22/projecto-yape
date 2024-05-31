@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDto } from './dto';
-import { Product, State, Order } from '@prisma/client';
+import { Product, Order } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -19,19 +19,33 @@ export class OrderService {
 
     async newOrder(order: OrderDto) {
         const {products} = order
-        let productObjects: Product[] = []
         if (!products) {
-            return {product: "NEED PRODUCTS"}
-        } else {
-            const productNames = products.split(',').map(name => name.trim());
-            productObjects = await this.prisma.product.findMany({
-                where: {
-                  name: {
-                    in: productNames
-                    },
-                },
-            });
+            return {product: "Order needs products"}
         }
+        const regex = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/;
+        if( !regex.test(products) ) {
+            return {error: "Not in correct REST format"}
+        }
+
+        if(products.length > 25) {
+            return {error: "Order name is too long"}
+        }
+        
+        let productObjects: Product[] = []
+        const productAsString = products.trim().slice(1, -1)
+        const productSeparated = productAsString.split(',')
+        let productNames = productSeparated
+        for(let i = 0; i < productSeparated.length; i++){
+            productNames[i] = productNames[i].trim().slice(1, -1)
+        }
+        productObjects = await this.prisma.product.findMany({
+            where: {
+                name: {
+                in: productNames
+                },
+            },
+        });
+
         if(productObjects.length === 0) {
             return {product: "NO PRODUCTS FOUND"}
         }
@@ -57,15 +71,12 @@ export class OrderService {
             return {order: "NO SUCH ORDER FOUND"}
         }
 
-        const statusUp = await this.prisma.state.findFirst({
+        const statusUp = await this.prisma.orderState.findFirst({
             where: {
                 state: statusOb.status
             }
         })
         if(!statusUp) {
-            return {status: "NO SUCH STATUS FOUND"}
-        }
-        if(statusUp.isOrder === 1) {
             return {status: "NO SUCH STATUS FOUND"}
         }
         const appendedStatus = order.statusID
