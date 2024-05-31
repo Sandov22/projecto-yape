@@ -115,3 +115,8 @@ Este request creara un nuevo Order Status. Pon el nombre en el body.<br>
 
 GET /state/get<br>
 Este request devolvera todos los tipos de Order Status que hay.
+
+
+
+## Base de Datos
+![Image](https://raw.githubusercontent.com/sandov22/projecto-yape/master/DatabaseImage.png)
