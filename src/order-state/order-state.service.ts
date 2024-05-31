@@ -17,7 +17,7 @@ export class OrderStateService{
             return {error: "State name is too long"};
         }
         return this.prisma.orderState.create({
-            data: { state: state.name },
+            data: { state: state.name }
         });
     }
 
