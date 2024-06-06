@@ -7,7 +7,7 @@ async function main() {
         for(const stateName of initialOrderStates) {
             await prisma.orderState.create({
                 data: {
-                    state: stateName,
+                    state: stateName.toLowerCase(),
                 }
             })
         }
@@ -15,7 +15,7 @@ async function main() {
         for(const stateName of initialProductStates) {
             await prisma.productState.create({
                 data: {
-                state: stateName,
+                state: stateName.toLowerCase(),
                 }
             })
         }

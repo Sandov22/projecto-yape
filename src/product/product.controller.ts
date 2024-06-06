@@ -30,4 +30,9 @@ export class ProductController {
     deleteOrder(@Param("name") name: string) {
         return this.productService.deleteProduct(name)
     }
+
+    @Get("available")
+    available(){
+        return this.productService.available()
+    }
 }

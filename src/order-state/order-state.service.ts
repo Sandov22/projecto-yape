@@ -2,6 +2,8 @@ import { Injectable, OnApplicationBootstrap, OnModuleInit } from "@nestjs/common
 import { OrderStateDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
+const LENGTH = "State name is too long"
+
 @Injectable()
 export class OrderStateService{
     constructor(private prisma: PrismaService) {}
@@ -11,10 +13,10 @@ export class OrderStateService{
             where: { state: state.name },
         });
         if (existingState) {
-            return {error: "State already exists"};
+            return {error: `State ${state.name} already exists`};
         }
         if (state.name.length > 25) {
-            return {error: "State name is too long"};
+            return {error: LENGTH};
         }
         return this.prisma.orderState.create({
             data: { state: state.name }

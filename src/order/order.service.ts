@@ -2,33 +2,58 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDto } from './dto';
 import { Product, Order } from '@prisma/client';
+import { NOTFOUND } from 'dns';
+
+const NEED_PRODUCT = "Order needs products"
+const REGEX = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/
+const REST_FORMAT = "Not in correct REST format"
+const TOO_LONG = "Order name is too long"
+const NO_PRODUCTS = "NO PRODUCTS FOUND"
+const CREATED = "CREATED".toLowerCase()
+const NO_ORDER = "NO SUCH ORDER FOUND"
 
 @Injectable()
 export class OrderService {
     constructor(private prisma: PrismaService) {}
     async myStatus(id: string) {
         const order = await this.prisma.order.findUnique({
-            where: { id: parseInt(id, 10) },
-            select: { status: true },
+            where: { id: id, deletedAt: null }
         });
         if (!order) {
-            return {order: "NO SUCH ORDER FOUND"}
+            return {order: `Order ${id} not found`}
         }
-        return {status: order.status.state}
+        const childID = await this.prisma.orderStatusIntermediate.findFirst({
+            where: {parentID: order.id}
+        })
+        const status = await this.prisma.orderState.findFirst({
+            where: { id: childID.childID },
+        });
+        const productsTable = await this.prisma.orderProductsIntermediate.findMany({
+            where: {parentID: order.id}
+        })
+        const productIDs = productsTable.map(ob => ob.childID);
+        const products = await this.prisma.product.findMany({
+            where: { id: {in: productIDs} }
+        });
+        const toReturn = {
+            ...order,
+            status: status,
+            products: products
+        }
+        return {toReturn}
     }
 
     async newOrder(order: OrderDto) {
         const {products} = order
         if (!products) {
-            return {product: "Order needs products"}
+            return {product: NEED_PRODUCT}
         }
-        const regex = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/;
+        const regex = REGEX;
         if( !regex.test(products) ) {
-            return {error: "Not in correct REST format"}
+            return {error: REST_FORMAT}
         }
-
         if(products.length > 25) {
-            return {error: "Order name is too long"}
+            return {error: TOO_LONG}
         }
         
         let productObjects: Product[] = []
@@ -47,28 +72,43 @@ export class OrderService {
         });
 
         if(productObjects.length === 0) {
-            return {product: "NO PRODUCTS FOUND"}
+            return {product: NO_PRODUCTS}
         }
+
+        const status = await this.prisma.orderState.findFirst({
+            where: {
+                state: CREATED
+            }
+        })
 
         const prismaOrder = await this.prisma.order.create({
             data: {
-                products: {
-                    connect: productObjects
-                },
                 description: order.description,
-                statusID: 1
             }
         })
-        return prismaOrder
+        let productArray = []
+        for (let x = 0; x < productObjects.length; x++) {
+            const addProducts = await this.prisma.orderProductsIntermediate.create({
+                data: {
+                    parentID: prismaOrder.id,
+                    childID: productObjects[x].id
+                }
+            })
+            productArray.push(addProducts)
+        }
+        const toReturn = {
+            ...prismaOrder,
+            productArray
+        }
+        return toReturn
     }
 
     async updateStatus(id: string, statusOb: { status: string }) {
         const order = await this.prisma.order.findUnique({
-            where: { id: parseInt(id, 10) },
-            select: { status: true, statusID: true },
+            where: { id: id, deletedAt: null },
         });
         if (!order) {
-            return {order: "NO SUCH ORDER FOUND"}
+            return {order: NO_ORDER}
         }
 
         const statusUp = await this.prisma.orderState.findFirst({
@@ -77,31 +117,30 @@ export class OrderService {
             }
         })
         if(!statusUp) {
-            return {status: "NO SUCH STATUS FOUND"}
+            return {status: `Status ${statusOb.status.toUpperCase()} not found`}
         }
-        const appendedStatus = order.statusID
-        const value = await this.prisma.order.update({
-            where: {id: parseInt(id, 10) },
-            data: { oldStatus: {push: appendedStatus} }
+        const value = await this.prisma.orderStatusIntermediate.create({
+            data: { 
+                parentID: order.id,
+                childID: statusUp.id
+             }
         })
-
-        
-        return this.prisma.order.update({
-            where: { id: parseInt(id, 10) },
-            data: { statusID: statusUp.id},
-        });
+        return order
     }
 
     async deleteOrder(id: string) {
-        const idNum = Number(id)
         const myOrder = await this.prisma.order.findUnique({
-            where: { id: idNum },
+            where: { id: id, deletedAt: null },
         });
         if (!myOrder) {
-            return {done: "Not Existant"}
+            return {done: NO_ORDER}
         }
-        return this.prisma.order.delete({
-            where: { id: idNum },
+        return this.prisma.order.update({
+            where: { id: id },
+            data: {
+                deletedAt: new Date()
+            }
           });
     }
+
 }

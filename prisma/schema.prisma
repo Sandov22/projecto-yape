@@ -29,38 +29,102 @@ enum ProductStatus {
 }
 
 model OrderState {
-  id        Int         @id @default(autoincrement())
-  state     String      @unique
-  orders    Order[]
+  id          String          @id @default(uuid())
+  state       String          @unique
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
 }
 
 model ProductState {
-  id        Int         @id @default(autoincrement())
-  state     String      @unique 
-  products  Product[]
+  id        String            @id @default(uuid())
+  state     String            @unique 
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
 }
 
 model Product {
-  id         Int        @id @default(autoincrement())
+  id         String            @id @default(uuid())
   name       String     
-  status     ProductState      @relation(fields: statusID, references: id)
-  statusID   Int
-  categories Category[]
-  Order      Order[]
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
+  id          String      @id @default(uuid())
   name        String
   description String
-  products    Product[]
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
 }
 
 model Order {
-  id          Int       @id @default(autoincrement())
+  id          String          @id @default(uuid())
   description String
-  status      OrderState     @relation(fields: statusID, references: id)
-  statusID    Int
-  oldStatus   Int[]
-  products    Product[]
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
 }
+
+model ProductStatusIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model OrderStatusIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model OrderOldIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model OrderProductsIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model ProductCategoriesIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model StateProductIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?        
+  updatedAt   DateTime        @updatedAt
+}
+
+model StateOrderIntermediate {
+  parentID  String  @unique()
+  childID   String
+  createdAt   DateTime        @default(now())
+  deletedAt   DateTime?
+  updatedAt   DateTime        @updatedAt
+}
+
+// FINISH ADDING DELETED CREATED UPDATED, FIX METHODS
+// LOWER CASE EVERYTHING
+

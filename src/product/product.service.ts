@@ -4,18 +4,41 @@ import { ProductDto } from './dto';
 import { Category, Product } from '@prisma/client';
 import { CategoryService } from 'src/category/category.service';
 
+const NO_SUCH_PRODUCT = "No such product found"
+const PRODUCT_NEEDS_NAME = "Product needs name"
+const REST_FORMAT = "Not in correct REST format"
+const PRODUCT_EXISTS = "Product already exists"
+const PRODUCT_TOO_LONG = "Product name is too long"
+const NO_CATEGORY = "A category does not exist"
+const INSTOCK  = "INSTOCK".toLowerCase()
+const NO_SUCH_STATUS = "No such status found"
+const NOT_EXISTANT = "Not Existant"
+const NO_SUCH_CATEGORY = "No such category found"
+const REGEX = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/
+const DELETED = "Product has been deleted"
+
 @Injectable()
 export class ProductService {
     constructor(private prisma: PrismaService) {}
     async myStatus(nameProv: string) {
         const product = await this.prisma.product.findFirst({
             where: { name: nameProv },
-            select: { status: true },
+            select: { id: true, deletedAt: true },
         });
         if (!product) {
-            return {product: "NO SUCH PRODUCT FOUND"}
+            return {product: NO_SUCH_PRODUCT}
         }
-        return {status: product.status.state}
+        if (product.deletedAt != null) {
+            return {product: DELETED}
+        }
+        const statusID = await this.prisma.productStatusIntermediate.findFirst({
+            where: { parentID: product.id }
+        })
+        const status = await this.prisma.productState.findFirst({
+            where: { id: statusID.childID }
+        })
+        
+        return {status: status}
     }
 
     async newProduct(product: ProductDto) {
@@ -25,24 +48,27 @@ export class ProductService {
         //String by commas and []: ^\[[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*\]$
         //Something by "": "(.*?)"
         const {name, categories} = product
+        const nameLow = name.toLowerCase()
         if (!name) {
-            return {error: "Product needs name"}
+            return {error: PRODUCT_NEEDS_NAME}
         }
-        const regex = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/;
+        const regex = REGEX;
         if( !regex.test(categories) ) {
-            return {error: "Not in correct REST format"}
+            return {error: REST_FORMAT}
         }
         const nameFound = await this.prisma.product.findFirst({
             where:{
                 name: name
             }
         })
-
+        if (nameFound && nameFound.deletedAt != null) {
+            return {error: DELETED}
+        }
         if (nameFound) {
-            return {error: "Product already exists"}
+            return {error: PRODUCT_EXISTS}
         }
         if(name.length > 25) {
-            return {error: "Product name is too long"}
+            return {error: PRODUCT_TOO_LONG}
         }
 
         let categoriesFound: Category[] = []
@@ -62,64 +88,73 @@ export class ProductService {
             },
         });
         if (categoriesFound.length != categoryNames.length) {
-            return {error: "A category does not exist"}
+            return {error: NO_CATEGORY}
         }
-    
-        const prismaProduct = this.prisma.product.create({
-            data: {
-                statusID: 2,
-                name: name,
-                categories: {
-                    connect: categoriesFound
-                }
+        const status = await this.prisma.productState.findFirst({
+            where: {
+                state: INSTOCK
             }
         })
+        const childID = status.id
+        const prismaProduct = await this.prisma.product.create({
+            data: {
+                name: name,
+            }
+        })
+        const parentID = prismaProduct.id
+        const intermediate = await this.prisma.productStatusIntermediate.create({
+            data: {
+                parentID: parentID,
+                childID: childID
+            }
+        })
+
         return prismaProduct
     }
 
     async updateStatus(nameProv: string, statusOb: { status: string }) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv },
-            select: { status: true, statusID: true, id: true },
+            where: { name: nameProv, deletedAt: null }
         });
         if (!product) {
-            return {product: "NO SUCH PRODUCT FOUND"}
+            return {product: NO_SUCH_PRODUCT }
         }
-        
         const statusUp = await this.prisma.productState.findFirst({
             where: {
                 state: statusOb.status
             }
         })
         if(!statusUp) {
-            return {status: "NO SUCH STATUS FOUND"}
+            return {status: NO_SUCH_STATUS}
         }
-        return this.prisma.product.update({
-            where: { id: product.id },
-            data: { statusID: statusUp.id},
+        return this.prisma.productStatusIntermediate.update({
+            where: { parentID: product.id },
+            data: { childID: statusUp.id},
         });
     }
 
     async deleteProduct(name: string) {
         const myProduct = await this.prisma.product.findFirst({
-            where: { name: name },
+            where: { name: name, deletedAt: null },
             select: { id: true },
         });
         if (!myProduct) {
-            return {done: "Not Existant"}
+            return {done: NOT_EXISTANT}
         }
-        return this.prisma.product.delete({
+        return this.prisma.product.update({
             where: { id: myProduct.id },
-          });
+            data: {
+                deletedAt: new Date()
+            }
+        });
     }
 
     async addCategory(nameProv: string, categoryOb: { category: string }) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv },
-            select: { id: true, categories: true },
+            where: { name: nameProv, deletedAt: null }
         });
         if (!product) {
-            return {product: "NO SUCH PRODUCT FOUND"}
+            return {product: NO_SUCH_PRODUCT}
         }
         const categoryUp = await this.prisma.category.findFirst({
             where: {
@@ -127,16 +162,32 @@ export class ProductService {
             }
         })
         if(!categoryUp) {
-            return {category: "NO SUCH CATEGORY FOUND"}
+            return {category: NO_SUCH_CATEGORY}
         }
-        return this.prisma.product.update({
-            where: { id: product.id },
-            data: { 
-                categories: {
-                    connect: {id: categoryUp.id}
-                } 
-            },
+        return this.prisma.productCategoriesIntermediate.create({
+            data: {
+                parentID: product.id,
+                childID: categoryUp.id
+            }
         });
+    }
+
+    async available() {
+        const available = await this.prisma.productState.findFirst({
+            where: {
+                state: INSTOCK, deletedAt: null
+            }
+        })
+        const availableID = available.id
+        const statusProducts = await this.prisma.orderStatusIntermediate.findMany({
+            where: { parentID: availableID },
+        });
+      
+        const productIDs = statusProducts.map(ob => ob.childID);
+        const products = await this.prisma.product.findMany({
+            where: { id: { in: productIDs } },
+        });
+        return products
     }
 
 }
