@@ -35,10 +35,18 @@ export class OrderService {
         const products = await this.prisma.product.findMany({
             where: { id: {in: productIDs} }
         });
+        const oldStatusesOb = await this.prisma.orderOldIntermediate.findMany({
+            where: {orderID: order.id}
+        })
+        const oldStatusIDs = oldStatusesOb.map(ob => ob.oldID);
+        const oldStatuses = await this.prisma.orderState.findMany({
+            where: {id: {in: oldStatusIDs}}
+        })
         const toReturn = {
             ...order,
             status: status,
-            products: products
+            products: products,
+            oldStatuses: oldStatuses
         }
         return {toReturn}
     }
@@ -70,17 +78,14 @@ export class OrderService {
                 },
             },
         });
-
         if(productObjects.length === 0) {
             return {product: NO_PRODUCTS}
         }
-
         const status = await this.prisma.orderState.findFirst({
             where: {
                 state: CREATED
             }
         })
-
         const prismaOrder = await this.prisma.order.create({
             data: {
                 description: order.description,
@@ -96,6 +101,12 @@ export class OrderService {
             })
             productArray.push(addProducts)
         }
+        const links = await this.prisma.orderStatusIntermediate.create({
+            data: {
+                orderID: prismaOrder.id,
+                statusID: status.id
+            }
+        })
         const toReturn = {
             ...prismaOrder,
             productArray
@@ -110,7 +121,9 @@ export class OrderService {
         if (!order) {
             return {order: NO_ORDER}
         }
-
+        const statusOldID = await this.prisma.orderStatusIntermediate.findFirst({
+            where: {orderID: order.id}
+        })
         const statusUp = await this.prisma.orderState.findFirst({
             where: {
                 state: statusOb.status.toLowerCase()
@@ -119,10 +132,18 @@ export class OrderService {
         if(!statusUp) {
             return {status: `Status ${statusOb.status.toUpperCase()} not found`}
         }
-        const value = await this.prisma.orderStatusIntermediate.create({
+        const value = await this.prisma.orderStatusIntermediate.update({
+            where: {orderID: order.id},
             data: { 
                 orderID: order.id,
-                statusID: statusUp.id
+                statusID: statusUp.id,
+             }
+        })
+        const old = await this.prisma.orderOldIntermediate.create({
+            data: { 
+                orderID: order.id,
+                oldID: statusOldID.statusID,
+                deletedAt: new Date()
              }
         })
         return order
@@ -135,6 +156,19 @@ export class OrderService {
         if (!myOrder) {
             return {done: NO_ORDER}
         }
+        const orderID = myOrder.id
+        await this.prisma.orderProductsIntermediate.updateMany({
+            where: { orderID: orderID },
+            data: {
+                deletedAt: new Date()
+            }
+        })
+        await this.prisma.orderStatusIntermediate.updateMany({
+            where: { orderID: orderID },
+            data: {
+                deletedAt: new Date()
+            }
+        })
         return this.prisma.order.update({
             where: { id: id },
             data: {
@@ -144,3 +178,5 @@ export class OrderService {
     }
 
 }
+
+//9261f078-cff1-40a8-b0f7-4a087050f78d
