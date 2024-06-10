@@ -140,7 +140,7 @@ export class OrderService {
             data: {
                 deletedAt: new Date()
             }
-          });
+        });
     }
 
 }

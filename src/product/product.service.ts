@@ -37,7 +37,6 @@ export class ProductService {
         const status = await this.prisma.productState.findFirst({
             where: { id: statusID.statusID }
         })
-        
         return {status: status}
     }
 
@@ -78,7 +77,6 @@ export class ProductService {
         for(let i = 0; i < categorySeparated.length; i++){
             categoryNames[i] = categoryNames[i].trim().slice(1, -1)
         }
-        
         categoriesFound = await this.prisma.category.findMany({
             where: {
             name: {
@@ -108,7 +106,7 @@ export class ProductService {
             }
         })
         for(let x = 0; x < categoriesFound.length; x++){
-            const categoryGive = await this.prisma.productCategoriesIntermediate.create({
+            await this.prisma.productCategoriesIntermediate.create({
                 data: {
                     productID: productID,
                     categoryID: categoriesFound[x].id
@@ -148,8 +146,28 @@ export class ProductService {
         if (!myProduct) {
             return {done: NOT_EXISTANT}
         }
-        return this.prisma.product.update({
-            where: { id: myProduct.id },
+        const productID = myProduct.id
+
+        await this.prisma.productCategoriesIntermediate.updateMany({
+            where: { productID: productID },
+            data: {
+                deletedAt: new Date()
+            }
+        })
+        await this.prisma.orderProductsIntermediate.updateMany({
+            where: { productID: productID },
+            data: {
+                deletedAt: new Date()
+            }
+        })
+        await this.prisma.productStatusIntermediate.updateMany({
+            where: { productID: productID },
+            data: {
+                deletedAt: new Date()
+            }
+        })
+        return await this.prisma.product.update({
+            where: { id: productID },
             data: {
                 deletedAt: new Date()
             }

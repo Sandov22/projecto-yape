@@ -78,15 +78,16 @@ model ProductStatusIntermediate {
 }
 
 model OrderStatusIntermediate {
-  orderID  String             @unique()
-  statusID   String
+  orderID     String             @unique()
+  statusID    String
   createdAt   DateTime        @default(now())
   deletedAt   DateTime?        
   updatedAt   DateTime        @updatedAt
 }
 
 model OrderOldIntermediate {
-  orderID     String          @unique()
+  id          String          @id @default(uuid())
+  orderID     String
   oldID       String
   createdAt   DateTime        @default(now())
   deletedAt   DateTime?        
@@ -94,7 +95,8 @@ model OrderOldIntermediate {
 }
 
 model OrderProductsIntermediate {
-  orderID     String  @unique()
+  id          String          @id @default(uuid())
+  orderID     String
   productID   String
   createdAt   DateTime        @default(now())
   deletedAt   DateTime?        
@@ -102,27 +104,12 @@ model OrderProductsIntermediate {
 }
 
 model ProductCategoriesIntermediate {
-  productID     String            @unique()
+  id            String            @id @default(uuid())
+  productID     String
   categoryID    String
   createdAt     DateTime          @default(now())
   deletedAt     DateTime?        
   updatedAt     DateTime          @updatedAt
-}
-
-model StateProductIntermediate {
-  parentID  String            @unique()
-  childID   String
-  createdAt   DateTime        @default(now())
-  deletedAt   DateTime?        
-  updatedAt   DateTime        @updatedAt
-}
-
-model StateOrderIntermediate {
-  parentID  String             @unique()
-  childID   String
-  createdAt   DateTime        @default(now())
-  deletedAt   DateTime?
-  updatedAt   DateTime        @updatedAt
 }
 
 // FINISH ADDING DELETED CREATED UPDATED, FIX METHODS

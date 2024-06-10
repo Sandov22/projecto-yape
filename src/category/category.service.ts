@@ -24,7 +24,7 @@ export class CategoryService {
                 categoryID: category.id
             }
         })
-        const productIDs = table.map(ob => ob.categoryID);
+        const productIDs = table.map(ob => ob.productID);
         const products = await this.prisma.product.findMany({
             where: { id: {in: productIDs} }
         });
