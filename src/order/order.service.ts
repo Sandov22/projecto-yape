@@ -17,21 +17,21 @@ export class OrderService {
     constructor(private prisma: PrismaService) {}
     async myStatus(id: string) {
         const order = await this.prisma.order.findUnique({
-            where: { id: id, deletedAt: null }
+            where: { id: id.toLowerCase(), deletedAt: null }
         });
         if (!order) {
             return {order: `Order ${id} not found`}
         }
-        const childID = await this.prisma.orderStatusIntermediate.findFirst({
-            where: {parentID: order.id}
+        const statusID = await this.prisma.orderStatusIntermediate.findFirst({
+            where: {orderID: order.id}
         })
         const status = await this.prisma.orderState.findFirst({
-            where: { id: childID.childID },
+            where: { id: statusID.statusID },
         });
         const productsTable = await this.prisma.orderProductsIntermediate.findMany({
-            where: {parentID: order.id}
+            where: {orderID: order.id}
         })
-        const productIDs = productsTable.map(ob => ob.childID);
+        const productIDs = productsTable.map(ob => ob.productID);
         const products = await this.prisma.product.findMany({
             where: { id: {in: productIDs} }
         });
@@ -57,7 +57,7 @@ export class OrderService {
         }
         
         let productObjects: Product[] = []
-        const productAsString = products.trim().slice(1, -1)
+        const productAsString = products.trim().slice(1, -1).toLowerCase()
         const productSeparated = productAsString.split(',')
         let productNames = productSeparated
         for(let i = 0; i < productSeparated.length; i++){
@@ -90,8 +90,8 @@ export class OrderService {
         for (let x = 0; x < productObjects.length; x++) {
             const addProducts = await this.prisma.orderProductsIntermediate.create({
                 data: {
-                    parentID: prismaOrder.id,
-                    childID: productObjects[x].id
+                    orderID: prismaOrder.id,
+                    productID: productObjects[x].id
                 }
             })
             productArray.push(addProducts)
@@ -113,7 +113,7 @@ export class OrderService {
 
         const statusUp = await this.prisma.orderState.findFirst({
             where: {
-                state: statusOb.status
+                state: statusOb.status.toLowerCase()
             }
         })
         if(!statusUp) {
@@ -121,8 +121,8 @@ export class OrderService {
         }
         const value = await this.prisma.orderStatusIntermediate.create({
             data: { 
-                parentID: order.id,
-                childID: statusUp.id
+                orderID: order.id,
+                statusID: statusUp.id
              }
         })
         return order

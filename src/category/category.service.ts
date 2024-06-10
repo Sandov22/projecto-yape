@@ -13,7 +13,7 @@ export class CategoryService {
     constructor(private prisma: PrismaService) {}
     async myProducts(id: string) {
         const category = await this.prisma.category.findFirst({
-            where: { name: id, deletedAt: null },
+            where: { name: id.toLowerCase(), deletedAt: null },
         });
         if (!category) {
             return {status: CATEGORY_NOT_FOUND + id}
@@ -21,10 +21,10 @@ export class CategoryService {
         const table = await this.prisma.productCategoriesIntermediate.findMany({
             where: {
                 deletedAt: null,
-                childID: category.id
+                categoryID: category.id
             }
         })
-        const productIDs = table.map(ob => ob.childID);
+        const productIDs = table.map(ob => ob.categoryID);
         const products = await this.prisma.product.findMany({
             where: { id: {in: productIDs} }
         });
@@ -34,7 +34,7 @@ export class CategoryService {
     async newCategory(category: CategoryDto) {
         const categoryFound = await this.prisma.category.findFirst({
             where:{
-                name: category.name
+                name: category.name.toLowerCase()
             }
         })
         const name = category.name
@@ -46,19 +46,19 @@ export class CategoryService {
         }
         const prismaCategory = this.prisma.category.create({
             data: {
-                name: category.name,
+                name: category.name.toLowerCase(),
                 description: category.description,
             }
         })
         return prismaCategory
     }
 
-    async deleteCategory(id: string) {
+    async deleteCategory(name: string) {
         const mycategory = await this.prisma.category.findFirst({
-            where: { name: id, deletedAt: null },
+            where: { name: name.toLowerCase(), deletedAt: null },
         });
         if (!mycategory) {
-            return {done: EXISTS, id}
+            return {done: EXISTS, name}
         }
         return this.prisma.category.update({
             where: { id: mycategory.id },

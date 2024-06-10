@@ -10,7 +10,7 @@ export class OrderStateService{
 
     async newState(state: OrderStateDto) {
         const existingState = await this.prisma.orderState.findUnique({
-            where: { state: state.name },
+            where: { state: state.name.toLowerCase() },
         });
         if (existingState) {
             return {error: `State ${state.name} already exists`};
@@ -19,7 +19,7 @@ export class OrderStateService{
             return {error: LENGTH};
         }
         return this.prisma.orderState.create({
-            data: { state: state.name }
+            data: { state: state.name.toLowerCase() }
         });
     }
 

@@ -22,7 +22,7 @@ export class ProductService {
     constructor(private prisma: PrismaService) {}
     async myStatus(nameProv: string) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv },
+            where: { name: nameProv.toLowerCase() },
             select: { id: true, deletedAt: true },
         });
         if (!product) {
@@ -32,10 +32,10 @@ export class ProductService {
             return {product: DELETED}
         }
         const statusID = await this.prisma.productStatusIntermediate.findFirst({
-            where: { parentID: product.id }
+            where: { productID: product.id }
         })
         const status = await this.prisma.productState.findFirst({
-            where: { id: statusID.childID }
+            where: { id: statusID.statusID }
         })
         
         return {status: status}
@@ -48,7 +48,6 @@ export class ProductService {
         //String by commas and []: ^\[[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*\]$
         //Something by "": "(.*?)"
         const {name, categories} = product
-        const nameLow = name.toLowerCase()
         if (!name) {
             return {error: PRODUCT_NEEDS_NAME}
         }
@@ -58,7 +57,7 @@ export class ProductService {
         }
         const nameFound = await this.prisma.product.findFirst({
             where:{
-                name: name
+                name: name.toLowerCase()
             }
         })
         if (nameFound && nameFound.deletedAt != null) {
@@ -72,7 +71,7 @@ export class ProductService {
         }
 
         let categoriesFound: Category[] = []
-        const categoryAsString = categories.trim().slice(1, -1)
+        const categoryAsString = categories.trim().slice(1, -1).toLowerCase()
         const categorySeparated = categoryAsString.split(',')
         
         let categoryNames = categorySeparated
@@ -98,44 +97,52 @@ export class ProductService {
         const childID = status.id
         const prismaProduct = await this.prisma.product.create({
             data: {
-                name: name,
+                name: name.toLowerCase(),
             }
         })
-        const parentID = prismaProduct.id
+        const productID = prismaProduct.id
         const intermediate = await this.prisma.productStatusIntermediate.create({
             data: {
-                parentID: parentID,
-                childID: childID
+                productID: productID,
+                statusID: childID
             }
         })
+        for(let x = 0; x < categoriesFound.length; x++){
+            const categoryGive = await this.prisma.productCategoriesIntermediate.create({
+                data: {
+                    productID: productID,
+                    categoryID: categoriesFound[x].id
+                }
+            })
+        }
 
-        return prismaProduct
+        return {prismaProduct, categoriesFound}
     }
 
     async updateStatus(nameProv: string, statusOb: { status: string }) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv, deletedAt: null }
+            where: { name: nameProv.toLowerCase(), deletedAt: null }
         });
         if (!product) {
             return {product: NO_SUCH_PRODUCT }
         }
         const statusUp = await this.prisma.productState.findFirst({
             where: {
-                state: statusOb.status
+                state: statusOb.status.toLowerCase()
             }
         })
         if(!statusUp) {
             return {status: NO_SUCH_STATUS}
         }
         return this.prisma.productStatusIntermediate.update({
-            where: { parentID: product.id },
-            data: { childID: statusUp.id},
+            where: { productID: product.id },
+            data: { statusID: statusUp.id},
         });
     }
 
     async deleteProduct(name: string) {
         const myProduct = await this.prisma.product.findFirst({
-            where: { name: name, deletedAt: null },
+            where: { name: name.toLowerCase(), deletedAt: null },
             select: { id: true },
         });
         if (!myProduct) {
@@ -151,14 +158,14 @@ export class ProductService {
 
     async addCategory(nameProv: string, categoryOb: { category: string }) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv, deletedAt: null }
+            where: { name: nameProv.toLowerCase(), deletedAt: null }
         });
         if (!product) {
             return {product: NO_SUCH_PRODUCT}
         }
         const categoryUp = await this.prisma.category.findFirst({
             where: {
-                name: categoryOb.category
+                name: categoryOb.category.toLowerCase()
             }
         })
         if(!categoryUp) {
@@ -166,8 +173,8 @@ export class ProductService {
         }
         return this.prisma.productCategoriesIntermediate.create({
             data: {
-                parentID: product.id,
-                childID: categoryUp.id
+                productID: product.id,
+                categoryID: categoryUp.id
             }
         });
     }
@@ -179,11 +186,11 @@ export class ProductService {
             }
         })
         const availableID = available.id
-        const statusProducts = await this.prisma.orderStatusIntermediate.findMany({
-            where: { parentID: availableID },
+        const statusProducts = await this.prisma.productStatusIntermediate.findMany({
+            where: { statusID: availableID },
         });
       
-        const productIDs = statusProducts.map(ob => ob.childID);
+        const productIDs = statusProducts.map(ob => ob.productID);
         const products = await this.prisma.product.findMany({
             where: { id: { in: productIDs } },
         });

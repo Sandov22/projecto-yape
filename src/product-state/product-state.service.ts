@@ -20,7 +20,7 @@ export class ProductStateService{
             return {error: TOO_LONG};
         }
         return this.prisma.productState.create({
-            data: { state: state.name },
+            data: { state: state.name.toLowerCase() },
         });
     }
 
