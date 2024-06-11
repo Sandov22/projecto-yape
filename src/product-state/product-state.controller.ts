@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { ProductStateDto } from "./dto";
 import { ProductStateService } from "./product-state.service";
 
@@ -13,5 +13,10 @@ export class ProductStateController {
     @Get("get")
     getStates() {
         return this.stateService.getStates()
+    }
+
+    @Delete("delete/:name")
+    delete(@Param("name") name: string,) {
+        return this.stateService.delete(name)
     }
 }

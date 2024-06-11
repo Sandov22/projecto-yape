@@ -3,7 +3,10 @@ import { ProductStateDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
 const TOO_LONG = `State name is too long`
-
+const NOT_EXISTANT = "Not Existant"
+const CANT_DELETE_PLACEHOLDER = "Placeholder cannot be deleted"
+const PLACEHOLDER = "placeholder"
+const MESSAGE = "Deleted status, moved all products to PLACEHOLDER"
 
 @Injectable()
 export class ProductStateService{
@@ -26,5 +29,49 @@ export class ProductStateService{
 
     async getStates() {
         return this.prisma.productState.findMany({})
+    }
+
+    async delete(name: string) {
+        if (name.toLowerCase() === 'placeholder') {
+            return CANT_DELETE_PLACEHOLDER
+        }
+        const myStatus = await this.prisma.productState.findFirst({
+            where: { state: name.toLowerCase(), deletedAt: null },
+            select: { id: true },
+        });
+        if (!myStatus) {
+            return {done: NOT_EXISTANT}
+        }
+        const statusID = myStatus.id
+        const placeholder = await this.prisma.productState.findFirst({
+            where: {state: PLACEHOLDER}
+        })
+        await this.prisma.productStatusIntermediate.updateMany({
+            where: { statusID: statusID },
+            data: {
+                statusID: placeholder.id
+            }
+        })
+        await this.prisma.productState.updateMany({
+            where: { id: myStatus.id },
+            data: {
+                deletedAt: new Date()
+            }
+        })
+        return {message: MESSAGE}
+        /*
+        const deleted = await this.prisma.productStatusIntermediate.findMany({
+            where: { statusID: statusID }
+        })
+        const productIDs = deleted.map(ob => ob.productID);
+        for(let x = 0; x < productIDs.length; x++){
+            await this.prisma.productStatusIntermediate.create({
+                data: {
+                    productID: productIDs[x],
+                    statusID: PLACEHOLDER.toLowerCase()
+                }
+            })
+        }
+        */
     }
 }
