@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationBootstrap, OnModuleInit } from "@nestjs/common";
 import { ProductStateDto } from "./dto";
 import { PrismaService } from "src/prisma/prisma.service";
+import { isNonNullType } from "graphql";
 
 const TOO_LONG = `State name is too long`
 const NOT_EXISTANT = "Not Existant"
@@ -28,7 +29,14 @@ export class ProductStateService{
     }
 
     async getStates() {
-        return this.prisma.productState.findMany({})
+        return this.prisma.productState.findMany({
+            where: {
+                deletedAt: null,
+                state: {
+                    not: PLACEHOLDER.toLowerCase()
+                }
+            }
+        })
     }
 
     async delete(name: string) {
@@ -59,19 +67,5 @@ export class ProductStateService{
             }
         })
         return {message: MESSAGE}
-        /*
-        const deleted = await this.prisma.productStatusIntermediate.findMany({
-            where: { statusID: statusID }
-        })
-        const productIDs = deleted.map(ob => ob.productID);
-        for(let x = 0; x < productIDs.length; x++){
-            await this.prisma.productStatusIntermediate.create({
-                data: {
-                    productID: productIDs[x],
-                    statusID: PLACEHOLDER.toLowerCase()
-                }
-            })
-        }
-        */
     }
 }

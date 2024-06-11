@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { OrderStateDto } from "./dto";
 import { OrderStateService } from "./order-state.service";
 
@@ -13,5 +13,10 @@ export class OrderStateController {
     @Get("get")
     getStates() {
         return this.stateService.getStates()
+    }
+
+    @Delete("delete/:name")
+    delete(@Param("name") name: string,) {
+        return this.stateService.delete(name)
     }
 }
