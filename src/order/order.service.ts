@@ -40,13 +40,24 @@ export class OrderService {
         })
         const oldStatusIDs = oldStatusesOb.map(ob => ob.oldID);
         const oldStatuses = await this.prisma.orderState.findMany({
-            where: {id: {in: oldStatusIDs}}
+            where: {id: {in: oldStatusIDs}},
+            select: {id: true, state: true}
+        })
+        const mergedArray = oldStatuses.map(status => {
+            const matchingOb = oldStatusesOb.find(ob => ob.oldID === status.id)
+            return {
+                id: status.id,
+                state: status.state,
+                createdat: matchingOb ? matchingOb.createdAt : null,
+                deletedat: matchingOb ? matchingOb.deletedAt : null,
+                updatedat: matchingOb ? matchingOb.updatedAt : null,
+              }
         })
         const toReturn = {
             ...order,
             status: status,
             products: products,
-            oldStatuses: oldStatuses
+            oldStatuses: mergedArray
         }
         return {toReturn}
     }
