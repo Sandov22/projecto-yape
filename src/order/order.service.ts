@@ -11,6 +11,9 @@ const TOO_LONG = "Order name is too long"
 const NO_PRODUCTS = "NO PRODUCTS FOUND"
 const CREATED = "CREATED".toLowerCase()
 const NO_ORDER = "NO SUCH ORDER FOUND"
+const NOT_FOUND = " not found"
+const MAX_PRODUCTS_LENGTH = 100
+const COMMA = ','
 
 @Injectable()
 export class OrderService {
@@ -20,7 +23,7 @@ export class OrderService {
             where: { id: id.toLowerCase(), deletedAt: null }
         });
         if (!order) {
-            return {order: `Order ${id} not found`}
+            return {order: id + NOT_FOUND}
         }
         const statusID = await this.prisma.orderStatusIntermediate.findFirst({
             where: {orderID: order.id}
@@ -59,7 +62,7 @@ export class OrderService {
             products: products,
             oldStatuses: mergedArray
         }
-        return {toReturn}
+        return toReturn
     }
 
     async newOrder(order: OrderDto) {
@@ -71,13 +74,13 @@ export class OrderService {
         if( !regex.test(products) ) {
             return {error: REST_FORMAT}
         }
-        if(products.length > 100) {
+        if(products.length > MAX_PRODUCTS_LENGTH) {
             return {error: TOO_LONG}
         }
         
         let productObjects: Product[] = []
         const productAsString = products.trim().slice(1, -1).toLowerCase()
-        const productSeparated = productAsString.split(',')
+        const productSeparated = productAsString.split(COMMA)
         let productNames = productSeparated
         for(let i = 0; i < productSeparated.length; i++){
             productNames[i] = productNames[i].trim().slice(1, -1)
@@ -141,7 +144,7 @@ export class OrderService {
             }
         })
         if(!statusUp) {
-            return {status: `Status ${statusOb.status.toUpperCase()} not found`}
+            return {status: statusOb.status.toUpperCase() + NOT_FOUND}
         }
         const value = await this.prisma.orderStatusIntermediate.update({
             where: {orderID: order.id},

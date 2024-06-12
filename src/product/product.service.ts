@@ -16,6 +16,7 @@ const NOT_EXISTANT = "Not Existant"
 const NO_SUCH_CATEGORY = "No such category found"
 const REGEX = /^\["[0-9a-zA-Z]+"(,"[0-9a-zA-Z]+")*\]$/
 const DELETED = "Product has been deleted"
+const MAX_NAME_LENGTH = 25
 
 @Injectable()
 export class ProductService {
@@ -65,7 +66,7 @@ export class ProductService {
         if (nameFound) {
             return {error: PRODUCT_EXISTS}
         }
-        if(name.length > 25) {
+        if(name.length > MAX_NAME_LENGTH) {
             return {error: PRODUCT_TOO_LONG}
         }
 
@@ -114,7 +115,7 @@ export class ProductService {
             })
         }
 
-        return {prismaProduct, categoriesFound}
+        return {product: prismaProduct, categories: categoriesFound}
     }
 
     async updateStatus(nameProv: string, statusOb: { status: string }) {
@@ -132,10 +133,11 @@ export class ProductService {
         if(!statusUp) {
             return {status: NO_SUCH_STATUS}
         }
-        return this.prisma.productStatusIntermediate.update({
+        await this.prisma.productStatusIntermediate.update({
             where: { productID: product.id },
             data: { statusID: statusUp.id},
         });
+        return statusUp
     }
 
     async deleteProduct(name: string) {
@@ -189,12 +191,13 @@ export class ProductService {
         if(!categoryUp) {
             return {category: NO_SUCH_CATEGORY}
         }
-        return this.prisma.productCategoriesIntermediate.create({
+        await this.prisma.productCategoriesIntermediate.create({
             data: {
                 productID: product.id,
                 categoryID: categoryUp.id
             }
         });
+        return categoryUp
     }
 
     async available() {

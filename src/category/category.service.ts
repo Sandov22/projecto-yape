@@ -7,6 +7,8 @@ const CATEGORY_NOT_FOUND = "NO SUCH CATEGORY FOUND: "
 const CATEGORY_EXISTS = "Category already exists: "
 const CATEGORY_LENGTH = "Category name is too long"
 const EXISTS = "Does not exist: "
+const MAX_NAME_LENGTH = 25
+
 
 @Injectable()
 export class CategoryService {
@@ -28,7 +30,7 @@ export class CategoryService {
         const products = await this.prisma.product.findMany({
             where: { id: {in: productIDs} }
         });
-        return {products: products}
+        return products
     }
 
     async newCategory(category: CategoryDto) {
@@ -41,7 +43,7 @@ export class CategoryService {
         if (categoryFound) {
             return {error: CATEGORY_EXISTS + name}
         }
-        if(category.name.length > 25) {
+        if(category.name.length > MAX_NAME_LENGTH) {
             return {error: CATEGORY_LENGTH}
         }
         const prismaCategory = this.prisma.category.create({

@@ -9,6 +9,7 @@ const PLACEHOLDER = "placeholder"
 const MESSAGE = "Deleted status, moved all orders to PLACEHOLDER"
 const UNDELETABLE = ['created', 'processing', 'shipping', 'delivered']
 const ALREADY_EXISTS = " already exists"
+const desc = "desc"
 
 @Injectable()
 export class OrderStateService{
@@ -59,7 +60,7 @@ export class OrderStateService{
         const oldOrderStates = await this.prisma.orderOldIntermediate.findMany({
             where: {orderID: {in: orderIDs}},
             orderBy: {
-                createdAt: "desc"
+                createdAt: desc
             }
         })
         const leastOld = new Map();
@@ -83,7 +84,7 @@ export class OrderStateService{
                 },
             });
         }
-        await this.prisma.orderState.update({
+        const toReturn = await this.prisma.orderState.update({
             where: {
               id: statusID
             },
@@ -91,6 +92,6 @@ export class OrderStateService{
               deletedAt: new Date()
             },
         });
-        return {message: MESSAGE}
+        return toReturn
     }
 }
