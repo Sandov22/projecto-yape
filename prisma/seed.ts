@@ -3,19 +3,19 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-    const initialOrderStates = ['CREATED', 'PROCESSING', 'SHIPPING', 'DELIVERED'];
+    const initialOrderStates = ['CREATED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'placeholder'];
         for(const stateName of initialOrderStates) {
             await prisma.orderState.create({
                 data: {
-                    state: stateName,
+                    state: stateName.toLowerCase(),
                 }
             })
         }
-        const initialProductStates = ['BLOCKED', 'INSTOCK', 'OUTOFSTOCK'];
+        const initialProductStates = ['BLOCKED', 'INSTOCK', 'OUTOFSTOCK', 'placeholder'];
         for(const stateName of initialProductStates) {
             await prisma.productState.create({
                 data: {
-                state: stateName,
+                state: stateName.toLowerCase(),
                 }
             })
         }

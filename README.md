@@ -1,6 +1,6 @@
 ## Descripcion
 
-Projecto de NestJS. Este projecto es un servidor y base de datos. El servidor permite crear perdidos, actualizar su estado, consultar el estado actual entre otros.
+Projecto de NestJS. Este projecto es un servidor y base de datos. El servidor permite crear perdidos, actualizar su estado, consultar el estado actual entre otros. El servidor esta en el puerto 6666.
 
 ## Base de Datos
 La base de datos se ubica en el port 5434, con usuario "postgres" y usa la contraseña 123.<br>
@@ -119,4 +119,4 @@ Este request devolvera todos los tipos de Order Status que hay.
 
 
 ## Base de Datos
-![Image](https://raw.githubusercontent.com/sandov22/projecto-yape/master/DatabaseImage.jpg)
+![Image](https://raw.githubusercontent.com/sandov22/projecto-yape/master/Database.jpg)
