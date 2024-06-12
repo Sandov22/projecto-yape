@@ -8,6 +8,8 @@ const NOT_EXISTANT = "Not Existant"
 const CANT_DELETE_PLACEHOLDER = "Placeholder cannot be deleted"
 const PLACEHOLDER = "placeholder"
 const MESSAGE = "Deleted status, moved all products to PLACEHOLDER"
+const ALREADY_EXISTS = " already exists"
+
 
 @Injectable()
 export class ProductStateService{
@@ -18,7 +20,7 @@ export class ProductStateService{
             where: { state: state.name.toLowerCase() },
         });
         if (existingState) {
-            return {error: `State ${state.name.toUpperCase()} already exists`};
+            return {error: state.name.toUpperCase() + ALREADY_EXISTS};
         }
         if (state.name.length > 25) {
             return {error: TOO_LONG};
@@ -40,7 +42,7 @@ export class ProductStateService{
     }
 
     async delete(name: string) {
-        if (name.toLowerCase() === 'placeholder') {
+        if (name.toLowerCase() === PLACEHOLDER) {
             return CANT_DELETE_PLACEHOLDER
         }
         const myStatus = await this.prisma.productState.findFirst({
@@ -60,12 +62,12 @@ export class ProductStateService{
                 statusID: placeholder.id
             }
         })
-        await this.prisma.productState.updateMany({
+        const toReturn = await this.prisma.productState.updateMany({
             where: { id: myStatus.id },
             data: {
                 deletedAt: new Date()
             }
         })
-        return {message: MESSAGE}
+        return toReturn
     }
 }
