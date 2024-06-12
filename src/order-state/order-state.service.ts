@@ -8,6 +8,7 @@ const CANT_DELETE_UNDELETABLE = "This status cannot be deleted"
 const PLACEHOLDER = "placeholder"
 const MESSAGE = "Deleted status, moved all orders to PLACEHOLDER"
 const UNDELETABLE = ['created', 'processing', 'shipping', 'delivered']
+const ALREADY_EXISTS = " already exists"
 
 @Injectable()
 export class OrderStateService{
@@ -18,7 +19,7 @@ export class OrderStateService{
             where: { state: state.name.toLowerCase() },
         });
         if (existingState) {
-            return {error: `State ${state.name} already exists`};
+            return {error: state.name.toUpperCase() +  ALREADY_EXISTS};
         }
         if (state.name.length > 25) {
             return {error: LENGTH};

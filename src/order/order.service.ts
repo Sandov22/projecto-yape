@@ -71,7 +71,7 @@ export class OrderService {
         if( !regex.test(products) ) {
             return {error: REST_FORMAT}
         }
-        if(products.length > 25) {
+        if(products.length > 100) {
             return {error: TOO_LONG}
         }
         
