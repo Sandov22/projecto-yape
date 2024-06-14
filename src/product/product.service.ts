@@ -234,7 +234,8 @@ export class ProductService {
         const alteredKeys = keys.map(ob => ob.toLowerCase())
         const values = Object.values(query)
         const alteredValues = values.map(ob => ob.toLowerCase())
-        let products = await this.prisma.product.findMany()
+        let products = await this.prisma.product.findMany({where: {deletedAt: null}})
+        let timeFilters: any = {}
         if(alteredKeys.includes(CREATEDAT)) {
             const index = alteredKeys.indexOf(CREATEDAT)
             const value = alteredValues.at(index)
@@ -250,34 +251,26 @@ export class ProductService {
             };
             const { year, month, day } = dateParts(value);
             let timeFilter = {
-                createdAt: {
                   gte: new Date(year),
                   lt: new Date(`${year}-12-31T23:59:59.999Z`),
-                },
-                deletedAt: null
             };
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.createdAt.gte = new Date(`${year}-${month}`);
-                timeFilter.createdAt.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}`);
+                timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
             }
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.createdAt.gte = new Date(`${year}-${month}-${day}`);
-                timeFilter.createdAt.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}-${day}`);
+                timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
             }
-            products = await this.prisma.product.findMany({
-                where: timeFilter
-            });
-            if (products.length == 0) {
-                return {message: NO_PRODUCTS}
-            }
+            timeFilters.createdAt = timeFilter
         }
         if(alteredKeys.includes(DELETEDAT)) {
             const index = alteredKeys.indexOf(DELETEDAT)
@@ -294,34 +287,28 @@ export class ProductService {
             };
             const { year, month, day } = dateParts(value);
             let timeFilter = {
-                deletedAt: {
                   gte: new Date(year),
                   lt: new Date(`${year}-12-31T23:59:59.999Z`),
-                },
             };
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.deletedAt.gte = new Date(`${year}-${month}`);
-                timeFilter.deletedAt.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}`);
+                timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
             }
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.deletedAt.gte = new Date(`${year}-${month}-${day}`);
-                timeFilter.deletedAt.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}-${day}`);
+                timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
             }
-            products = await this.prisma.product.findMany({
-                where: timeFilter
-            });
-            if (products.length == 0) {
-                return {message: NO_PRODUCTS}
-            }
+            timeFilters.deletedAt = timeFilter
         }
+        else { timeFilters.deletedAt = null }
         if(alteredKeys.includes(UPDATEDAT)) {
             const index = alteredKeys.indexOf(UPDATEDAT)
             const value = alteredValues.at(index)
@@ -337,34 +324,32 @@ export class ProductService {
             };
             const { year, month, day } = dateParts(value);
             let timeFilter = {
-                updatedAt: {
-                  gte: new Date(year),
-                  lt: new Date(`${year}-12-31T23:59:59.999Z`),
-                },
-                deletedAt: null
+                gte: new Date(year),
+                lt: new Date(`${year}-12-31T23:59:59.999Z`),
             };
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.updatedAt.gte = new Date(`${year}-${month}`);
-                timeFilter.updatedAt.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}`);
+                timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
             }
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
                     return {message: DATE_INVALID}
                 }
-                timeFilter.updatedAt.gte = new Date(`${year}-${month}-${day}`);
-                timeFilter.updatedAt.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
+                timeFilter.gte = new Date(`${year}-${month}-${day}`);
+                timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
             }
-            products = await this.prisma.product.findMany({
-                where: timeFilter
-            });
-            if (products.length == 0) {
-                return {message: NO_PRODUCTS}
-            }
+            timeFilters.updatedAt = timeFilter
+        }
+        products = await this.prisma.product.findMany({
+            where: timeFilters
+        });
+        if (products.length == 0) {
+            return {message: NO_PRODUCTS}
         }
         return products
     }
