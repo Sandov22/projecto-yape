@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ProductDto } from './dto';
 
@@ -34,5 +34,10 @@ export class ProductController {
     @Get("available")
     available(){
         return this.productService.available()
+    }
+
+    @Get("all")
+    all(@Query() query: string[]) {
+        return this.productService.all(query)
     }
 }
