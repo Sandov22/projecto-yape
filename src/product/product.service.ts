@@ -341,6 +341,7 @@ export class ProductService {
                   gte: new Date(year),
                   lt: new Date(`${year}-12-31T23:59:59.999Z`),
                 },
+                deletedAt: null
             };
             if (month) {
                 const monthAsNum = Number(month)
