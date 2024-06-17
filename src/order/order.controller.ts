@@ -8,8 +8,8 @@ export class OrderController {
     constructor(private orderService: OrderService) {}
 
     @Get("get/:id")
-    myStatus(@Param("id") id: string) {
-        return this.orderService.myStatus(id)
+    myOrder(@Param("id") id: string) {
+        return this.orderService.myOrder(id)
     }
     //@Body("products") products: Product[], @Body("description") description: string
     @Post("new")

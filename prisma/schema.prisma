@@ -111,7 +111,3 @@ model ProductCategoriesIntermediate {
   deletedAt     DateTime?        
   updatedAt     DateTime          @updatedAt
 }
-
-// FINISH ADDING DELETED CREATED UPDATED, FIX METHODS
-// LOWER CASE EVERYTHING
-

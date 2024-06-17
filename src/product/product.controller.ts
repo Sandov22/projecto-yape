@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ProductDto } from './dto';
 
@@ -7,8 +7,8 @@ export class ProductController {
     constructor(private productService: ProductService) {}
 
     @Get("get/:id")
-    myStatus(@Param("id") id: string) {
-        return this.productService.myStatus(id)
+    myProduct(@Param("id") id: string) {
+        return this.productService.myProduct(id)
     }
     
     @Post("new")
@@ -27,12 +27,17 @@ export class ProductController {
     }
 
     @Delete("delete/:name")
-    deleteOrder(@Param("name") name: string) {
+    deleteProduct(@Param("name") name: string) {
         return this.productService.deleteProduct(name)
     }
 
     @Get("available")
-    available(){
-        return this.productService.available()
+    available(@Query() query: string[]){
+        return this.productService.available(query)
+    }
+
+    @Get("all")
+    all(@Query() query: string[]) {
+        return this.productService.all(query)
     }
 }
