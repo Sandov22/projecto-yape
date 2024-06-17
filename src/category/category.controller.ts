@@ -11,13 +11,11 @@ export class CategoryController {
     myProducts(@Param("id") id: string, @Query() query: string[]) {
         return this.categoryService.myProducts(id, query)
     }
-    //@Body("products") products: Product[], @Body("description") description: string
+
     @Post("new")
     newCategory(@Body() category: CategoryDto) {
         return this.categoryService.newCategory(category)
     }
-
-    //To add a product do it from products
 
     @Delete("delete/:id")
     deleteCategory(@Param("id") id: string) {

@@ -18,7 +18,7 @@ const COMMA = ','
 @Injectable()
 export class OrderService {
     constructor(private prisma: PrismaService) {}
-    async myStatus(id: string) {
+    async myOrder(id: string) {
         const order = await this.prisma.order.findUnique({
             where: { id: id.toLowerCase(), deletedAt: null }
         });

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductDto } from './dto';
-import { Category, Product } from '@prisma/client';
+import { Category, Prisma, Product } from '@prisma/client';
 import { CategoryService } from 'src/category/category.service';
 import { log } from 'console';
 
@@ -21,7 +21,7 @@ const MAX_NAME_LENGTH = 25
 const yearRegex = /^\d{4}$/
 const monthRegex = /^\d{4}-\d{2}$/
 const dayRegex = /^\d{4}-\d{2}-\d{2}$/
-const DATE_INVALID = "Not a valid date"
+const DATE_INVALID = "Not a valid date try YEAR-MONTH-DAY"
 const NO_PRODUCTS = "No products were found"
 const UPDATEDAT = "updatedat"
 const DELETEDAT = "deletedat"
@@ -30,16 +30,12 @@ const CREATEDAT = "createdat"
 @Injectable()
 export class ProductService {
     constructor(private prisma: PrismaService) {}
-    async myStatus(nameProv: string) {
+    async myProduct(nameProv: string) {
         const product = await this.prisma.product.findFirst({
-            where: { name: nameProv.toLowerCase() },
-            select: { id: true, deletedAt: true },
+            where: { name: nameProv.toLowerCase(), deletedAt: null },
         });
         if (!product) {
             return {product: NO_SUCH_PRODUCT}
-        }
-        if (product.deletedAt != null) {
-            return {product: DELETED}
         }
         const statusID = await this.prisma.productStatusIntermediate.findFirst({
             where: { productID: product.id }
@@ -47,7 +43,11 @@ export class ProductService {
         const status = await this.prisma.productState.findFirst({
             where: { id: statusID.statusID }
         })
-        return {status: status}
+        const toReturn = {
+            product,
+            status
+        }
+        return {product: toReturn}
     }
 
     async newProduct(product: ProductDto) {
@@ -209,7 +209,7 @@ export class ProductService {
         return categoryUp
     }
 
-    async available() {
+    async available(query: string[]) {
         const available = await this.prisma.productState.findFirst({
             where: {
                 state: INSTOCK, deletedAt: null
@@ -219,28 +219,48 @@ export class ProductService {
         const statusProducts = await this.prisma.productStatusIntermediate.findMany({
             where: { statusID: availableID },
         });
-      
+        const timeFilter = this.filterConstructor(query)
+        if(Object.keys(timeFilter).length == 0) {
+            return {mesage: DATE_INVALID}
+        }
         const productIDs = statusProducts.map(ob => ob.productID);
+        timeFilter.id = { in: productIDs }
         const products = await this.prisma.product.findMany({
-            where: { id: { in: productIDs } },
+            where: timeFilter
         });
+        if (products.length == 0) {
+            return {message: NO_PRODUCTS}
+        }
         return products
     }
 
     async all(query: string[]) {
         //Posible Filters: CreatedAt, UpdatedAt, DeletedAt, Status, Category
-        if (query.length == 0) {return "END"}
+        const timeFilter = this.filterConstructor(query)
+        if(Object.keys(timeFilter).length == 0) {
+            return {mesage: DATE_INVALID}
+        }
+        const products = await this.prisma.product.findMany({
+            where: timeFilter
+        });
+        if (products.length == 0) {
+            return {message: NO_PRODUCTS}
+        }
+        return products
+    }
+
+    filterConstructor(query: string[]) : Prisma.ProductWhereInput {    
+        if (query.length == 0) {return {deletedAt: null}}
         const keys = Object.keys(query)
         const alteredKeys = keys.map(ob => ob.toLowerCase())
         const values = Object.values(query)
         const alteredValues = values.map(ob => ob.toLowerCase())
-        let products = await this.prisma.product.findMany({where: {deletedAt: null}})
         let timeFilters: any = {}
         if(alteredKeys.includes(CREATEDAT)) {
             const index = alteredKeys.indexOf(CREATEDAT)
             const value = alteredValues.at(index)
             if (!(yearRegex.test(value) || monthRegex.test(value) || dayRegex.test(value))) {
-                return {message: DATE_INVALID}
+                return {}
             }
             const dateParts = (dateString) => {
                 const parts = dateString.split('-');
@@ -257,7 +277,7 @@ export class ProductService {
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}`);
                 timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
@@ -265,7 +285,7 @@ export class ProductService {
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}-${day}`);
                 timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
@@ -276,7 +296,7 @@ export class ProductService {
             const index = alteredKeys.indexOf(DELETEDAT)
             const value = alteredValues.at(index)
             if (!(yearRegex.test(value) || monthRegex.test(value) || dayRegex.test(value))) {
-                return {message: DATE_INVALID}
+                return {}
             }
             const dateParts = (dateString) => {
                 const parts = dateString.split('-');
@@ -293,7 +313,7 @@ export class ProductService {
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}`);
                 timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
@@ -301,7 +321,7 @@ export class ProductService {
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}-${day}`);
                 timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
@@ -313,7 +333,7 @@ export class ProductService {
             const index = alteredKeys.indexOf(UPDATEDAT)
             const value = alteredValues.at(index)
             if (!(yearRegex.test(value) || monthRegex.test(value) || dayRegex.test(value))) {
-                return {message: DATE_INVALID}
+                return {}
             }
             const dateParts = (dateString) => {
                 const parts = dateString.split('-');
@@ -330,7 +350,7 @@ export class ProductService {
             if (month) {
                 const monthAsNum = Number(month)
                 if (monthAsNum > 12 || monthAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}`);
                 timeFilter.lt = new Date(`${year}-${month}-31T23:59:59.999Z`);
@@ -338,20 +358,14 @@ export class ProductService {
             if (day) {
                 const dayAsNum = Number(day)
                 if (dayAsNum > 31 || dayAsNum < 1) {
-                    return {message: DATE_INVALID}
+                    return {}
                 }
                 timeFilter.gte = new Date(`${year}-${month}-${day}`);
                 timeFilter.lt = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
             }
             timeFilters.updatedAt = timeFilter
         }
-        products = await this.prisma.product.findMany({
-            where: timeFilters
-        });
-        if (products.length == 0) {
-            return {message: NO_PRODUCTS}
-        }
-        return products
+        return timeFilters
     }
 
 }
