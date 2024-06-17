@@ -18,7 +18,6 @@ $ npm install
 $ docker compose up dv-db -d
 #Para empezar prisma corre estos commandos:
 npx prisma migrate dev --name init
-npx prisma generate
 #Para generar los Status originales en la base de datos corre:
 npx ts-node prisma/seed.ts
 #Para correr el servidor corre
